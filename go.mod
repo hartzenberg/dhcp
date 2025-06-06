@@ -4,8 +4,6 @@ go 1.23.0
 
 toolchain go1.24.2
 
-replace github.com/hartzenberg/dhcp => github.com/hartzenberg/dhcp v0.0.0-20250606054031-2e0e49be179c
-
 require (
 	github.com/google/go-cmp v0.5.9
 	github.com/hugelgupf/socketpair v0.0.0-20190730060125-05d35a94e714
