@@ -259,9 +259,13 @@ func (c *Client) SendReceive(sendFd, recvFd int, packet *dhcpv4.DHCPv4, messageT
 	if err != nil {
 		return nil, err
 	}
-	laddr, err := c.getLocalUDPAddr()
-	if err != nil {
-		return nil, err
+	//laddr, err := c.getLocalUDPAddr()
+	//if err != nil {
+	//	return nil, err
+	//}
+	laddr := &net.UDPAddr{
+    		IP:   net.IPv4zero,
+    		Port: 68,
 	}
 	packetBytes, err := MakeRawUDPPacket(packet.ToBytes(), *raddr, *laddr)
 	if err != nil {
