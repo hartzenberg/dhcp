@@ -8,7 +8,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/insomniacslk/dhcp/dhcpv4"
+	"github.com/hartzenberg/dhcp/dhcpv4"
 )
 
 // Lease contains a DHCPv4 lease after DORA.

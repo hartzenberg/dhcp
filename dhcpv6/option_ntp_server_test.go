@@ -4,7 +4,7 @@ import (
 	"net"
 	"testing"
 
-	"github.com/insomniacslk/dhcp/rfc1035label"
+	"github.com/hartzenberg/dhcp/rfc1035label"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

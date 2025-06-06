@@ -3,7 +3,7 @@ package ztpv6
 import (
 	"testing"
 
-	"github.com/insomniacslk/dhcp/dhcpv6"
+	"github.com/hartzenberg/dhcp/dhcpv6"
 	"github.com/stretchr/testify/require"
 )
 

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/insomniacslk/dhcp/dhcpv4"
+	"github.com/hartzenberg/dhcp/dhcpv4"
 )
 
 // CircuitID represents the structure of network vendor interface formats

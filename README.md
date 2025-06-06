@@ -1,8 +1,8 @@
 # dhcp
-[![Build Status](https://img.shields.io/github/actions/workflow/status/insomniacslk/dhcp/tests.yml?branch=master)](https://github.com/insomniacslk/dhcp/actions?query=branch%3Amaster)
-[![GoDoc](https://godoc.org/github.com/insomniacslk/dhcp?status.svg)](https://godoc.org/github.com/insomniacslk/dhcp)
-[![codecov](https://codecov.io/gh/insomniacslk/dhcp/branch/master/graph/badge.svg)](https://codecov.io/gh/insomniacslk/dhcp)
-[![Go Report Card](https://goreportcard.com/badge/github.com/insomniacslk/dhcp)](https://goreportcard.com/report/github.com/insomniacslk/dhcp)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/hartzenberg/dhcp/tests.yml?branch=master)](https://github.com/hartzenberg/dhcp/actions?query=branch%3Amaster)
+[![GoDoc](https://godoc.org/github.com/hartzenberg/dhcp?status.svg)](https://godoc.org/github.com/hartzenberg/dhcp)
+[![codecov](https://codecov.io/gh/hartzenberg/dhcp/branch/master/graph/badge.svg)](https://codecov.io/gh/hartzenberg/dhcp)
+[![Go Report Card](https://goreportcard.com/badge/github.com/hartzenberg/dhcp)](https://goreportcard.com/report/github.com/hartzenberg/dhcp)
 
 DHCPv4 and DHCPv6 decoding/encoding library with client and server code, written in Go.
 
@@ -23,7 +23,7 @@ pulled in automatically if necessary.
 
 So, to get `dhcpv6` and `dhcpv4` just run:
 ```
-go get -u github.com/insomniacslk/dhcp/dhcpv{4,6}
+go get -u github.com/hartzenberg/dhcp/dhcpv{4,6}
 ```
 
 
@@ -40,7 +40,7 @@ packages.
 * TODO dhcpv4 packet crafting
 
 
-See more example code at https://github.com/insomniacslk/exdhcp
+See more example code at https://github.com/hartzenberg/exdhcp
 
 
 # Public projects that use it

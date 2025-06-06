@@ -8,8 +8,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/insomniacslk/dhcp/iana"
-	"github.com/insomniacslk/dhcp/rfc1035label"
+	"github.com/hartzenberg/dhcp/iana"
+	"github.com/hartzenberg/dhcp/rfc1035label"
 	"github.com/u-root/uio/uio"
 )
 

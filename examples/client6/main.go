@@ -4,7 +4,7 @@ import (
 	"flag"
 	"log"
 
-	"github.com/insomniacslk/dhcp/dhcpv6/client6"
+	"github.com/hartzenberg/dhcp/dhcpv6/client6"
 )
 
 var (

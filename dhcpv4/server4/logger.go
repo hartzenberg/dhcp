@@ -1,7 +1,7 @@
 package server4
 
 import (
-	"github.com/insomniacslk/dhcp/dhcpv4"
+	"github.com/hartzenberg/dhcp/dhcpv4"
 )
 
 // Logger is a handler which will be used to output logging messages

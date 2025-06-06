@@ -17,7 +17,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/insomniacslk/dhcp/dhcpv6"
+	"github.com/hartzenberg/dhcp/dhcpv6"
 )
 
 // Broadcast destination IP addresses as defined by RFC 3315

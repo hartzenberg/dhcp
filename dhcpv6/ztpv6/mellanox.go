@@ -3,8 +3,8 @@ package ztpv6
 import (
 	"errors"
 
-	"github.com/insomniacslk/dhcp/dhcpv6"
-	"github.com/insomniacslk/dhcp/iana"
+	"github.com/hartzenberg/dhcp/dhcpv6"
+	"github.com/hartzenberg/dhcp/iana"
 )
 
 type MlnxSubOption uint16

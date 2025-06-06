@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/insomniacslk/dhcp/iana"
+	"github.com/hartzenberg/dhcp/iana"
 	"github.com/stretchr/testify/require"
 	"github.com/u-root/uio/uio"
 )

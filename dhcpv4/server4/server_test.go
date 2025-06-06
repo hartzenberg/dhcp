@@ -8,9 +8,9 @@ import (
 	"net"
 	"testing"
 
-	"github.com/insomniacslk/dhcp/dhcpv4"
-	"github.com/insomniacslk/dhcp/dhcpv4/nclient4"
-	"github.com/insomniacslk/dhcp/interfaces"
+	"github.com/hartzenberg/dhcp/dhcpv4"
+	"github.com/hartzenberg/dhcp/dhcpv4/nclient4"
+	"github.com/hartzenberg/dhcp/interfaces"
 	"github.com/stretchr/testify/require"
 )
 

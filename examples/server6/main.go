@@ -4,8 +4,8 @@ import (
 	"log"
 	"net"
 
-	"github.com/insomniacslk/dhcp/dhcpv6"
-	"github.com/insomniacslk/dhcp/dhcpv6/server6"
+	"github.com/hartzenberg/dhcp/dhcpv6"
+	"github.com/hartzenberg/dhcp/dhcpv6/server6"
 )
 
 func handler(conn net.PacketConn, peer net.Addr, m dhcpv6.DHCPv6) {
