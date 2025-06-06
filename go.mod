@@ -1,4 +1,4 @@
-module github.com/insomniacslk/dhcp
+module github.com/hartzenberg/dhcp
 
 go 1.23.0
 
@@ -7,6 +7,7 @@ toolchain go1.24.2
 require (
 	github.com/google/go-cmp v0.5.9
 	github.com/hugelgupf/socketpair v0.0.0-20190730060125-05d35a94e714
+	github.com/insomniacslk/dhcp v0.0.0-20250417080101-5f8cf70e8c5f
 	github.com/jsimonetti/rtnetlink v1.3.5
 	github.com/mdlayher/netlink v1.7.2
 	github.com/mdlayher/packet v1.1.2
