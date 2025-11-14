@@ -216,12 +216,10 @@ func (c *Client) getRemoteUDPAddr() (*net.UDPAddr, error) {
 // containing all the sent and received DHCPv4 messages.
 func (c *Client) Exchange(ifname string, modifiers ...dhcpv4.Modifier) ([]*dhcpv4.DHCPv4, error) {
 	conversation := make([]*dhcpv4.DHCPv4, 0)
-	/*
 	raddr, err := c.getRemoteUDPAddr()
 	if err != nil {
 		return nil, err
 	}
-	*/
 	laddr, err := c.getLocalUDPAddr()
 	if err != nil {
 		return nil, err
