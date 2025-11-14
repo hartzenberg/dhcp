@@ -187,7 +187,7 @@ func (c *Client) Exchange(ifname string, modifiers ...dhcpv4.Modifier) ([]*dhcpv
 		return nil, err
 	}
 
-	laddr := c.getLocalUDPAddr()
+	laddr, err := c.getLocalUDPAddr()
 	if err != nil {
 		return nil, err
 	}
