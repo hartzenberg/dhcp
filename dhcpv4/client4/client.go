@@ -285,7 +285,7 @@ func (c *Client) Exchange(ifname string, modifiers ...dhcpv4.Modifier) ([]*dhcpv
 	offer, err := c.SendDHCPDiscover(pfd, rfd, ifname, 0, dhcpv4.MessageTypeOffer)
 	//offer, err := c.SendReceive(pfd, rfd, discover, dhcpv4.MessageTypeOffer)
 	if err != nil {
-		log.Printf("c.SendReceive(sfd, rfd, discover, dhcpv4.MessageTypeOffer) failed: %v", err)
+		log.Printf("c.SendDHCPDiscover(pfd, rfd, ifname, 0, dhcpv4.MessageTypeOffer) failed: %v", err)
 		return conversation, err
 	}
 	conversation = append(conversation, offer)
@@ -354,6 +354,7 @@ func (c *Client) SendDHCPDiscover(pfd int, rfd int, ifname string, xid uint32, m
 			n, _, innerErr := unix.Recvfrom(rfd, buf, 0)
 			if innerErr != nil {
 				errs <- innerErr
+				fmt.Printf("func-error: innerErr recieving buf: %v\n", innerErr)
 				return
 			}
 
@@ -391,6 +392,7 @@ func (c *Client) SendDHCPDiscover(pfd int, rfd int, ifname string, xid uint32, m
 			response, innerErr = dhcpv4.FromBytes(payload)
 			if innerErr != nil {
 				errs <- innerErr
+				fmt.Printf("func-error: innerErr decoding bytes: %v\n", innerErr)
 				return
 			}
 			// check that this is a response to our message
