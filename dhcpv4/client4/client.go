@@ -328,7 +328,7 @@ func (c *Client) SendDHCPDiscover(pfd int, rfd int, ifname string, xid uint32, m
 	if err != nil {
 		return nil, err
 	}
-	binary.LittleEndian.PutUint32(transID[:], tid)
+	binary.BigEndian.PutUint32(transID[:], tid)
 
 	// Destination: broadcast MAC on the same interface
 	dstMAC := []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
@@ -350,21 +350,13 @@ func (c *Client) SendDHCPDiscover(pfd int, rfd int, ifname string, xid uint32, m
 			errs <- innerErr
 			return
 		}
-		fmt.Printf("func: Listen for pkts on %d...\n",rfd)
 		for {
 			buf := make([]byte, MaxUDPReceivedPacketSize)
 			n, _, innerErr := unix.Recvfrom(rfd, buf, 0)
 			if innerErr != nil {
-			        if innerErr == syscall.EINTR || err == unix.EINTR {
-			            // System call was interrupted by a signal, retry the call
-			            continue
-			        }
 				errs <- innerErr
-				fmt.Printf("func-error: innerErr recieving buf: %v\n", innerErr)
 				return
 			}
-
-			fmt.Printf("func: received %d bytes...\n",n)
 
 			var iph ipv4.Header
 			if err := iph.Parse(buf[:n]); err != nil {
@@ -383,7 +375,6 @@ func (c *Client) SendDHCPDiscover(pfd int, rfd int, ifname string, xid uint32, m
 				expectedSrcPort = c.RemoteAddr.(*net.UDPAddr).Port
 			}
 			if srcPort != expectedSrcPort {
-				fmt.Printf("func-error: wrong srcport...\n")
 				continue
 			}
 			dstPort := int(binary.BigEndian.Uint16(udph[2:4]))
@@ -392,7 +383,6 @@ func (c *Client) SendDHCPDiscover(pfd int, rfd int, ifname string, xid uint32, m
 				expectedDstPort = c.LocalAddr.(*net.UDPAddr).Port
 			}
 			if dstPort != expectedDstPort {
-				fmt.Printf("func-error: wrong dstport...\n")
 				continue
 			}
 			// UDP checksum is not checked
@@ -402,17 +392,14 @@ func (c *Client) SendDHCPDiscover(pfd int, rfd int, ifname string, xid uint32, m
 			response, innerErr = dhcpv4.FromBytes(payload)
 			if innerErr != nil {
 				errs <- innerErr
-				fmt.Printf("func-error: innerErr decoding bytes: %v\n", innerErr)
 				return
 			}
 			// check that this is a response to our message
 			if response.TransactionID != transID {
-				fmt.Printf("func-error: not our transaction...\n")
 				continue
 			}
 			// wait for a response message
 			if response.OpCode != dhcpv4.OpcodeBootReply {
-				fmt.Printf("func-error: not our Opcode...\n")
 				continue
 			}
 			// if we are not requested to wait for a specific message type,
