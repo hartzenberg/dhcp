@@ -269,6 +269,7 @@ func (c *Client) Exchange(ifname string, modifiers ...dhcpv4.Modifier) ([]*dhcpv
 	// Discover
 	discover, err := dhcpv4.NewDiscoveryForInterface(ifname, modifiers...)
 	if err != nil {
+		log.Printf("dhcpv4.NewDiscoveryForInterface(ifname, modifiers...) failed: %v", err)
 		return conversation, err
 	}
 	conversation = append(conversation, discover)
