@@ -244,12 +244,13 @@ func (c *Client) Exchange(ifname string, modifiers ...dhcpv4.Modifier) ([]*dhcpv
 	}
 	*/
 	sfd, err = makePacketSocket(ifname)
-
 	if err != nil {
+		log.Printf("makePacketSocket(ifname) failed: %v", err)
 		return conversation, err
 	}
 	rfd, err := makeListeningSocketWithCustomPort(ifname, laddr.Port)
 	if err != nil {
+		log.Printf("makeListeningSocketWithCustomPort(ifname, laddr.Port) failed: %v", err)
 		return conversation, err
 	}
 
