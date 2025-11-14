@@ -8,6 +8,7 @@ import (
 	"log"
 	"net"
 	"time"
+	"math/rand"
 
 	"github.com/hartzenberg/dhcp/dhcpv4"
 	"golang.org/x/net/ipv4"
@@ -272,17 +273,18 @@ func (c *Client) Exchange(ifname string, modifiers ...dhcpv4.Modifier) ([]*dhcpv
 	}()
 
 	// Discover
-	discover, err := dhcpv4.NewDiscoveryForInterface(ifname, modifiers...)
-	if err != nil {
-		log.Printf("dhcpv4.NewDiscoveryForInterface(ifname, modifiers...) failed: %v", err)
-		return conversation, err
-	}
-	conversation = append(conversation, discover)
+	//discover, err := dhcpv4.NewDiscoveryForInterface(ifname, modifiers...)
+	//if err != nil {
+	//	log.Printf("dhcpv4.NewDiscoveryForInterface(ifname, modifiers...) failed: %v", err)
+	//	return conversation, err
+	//}
+	//conversation = append(conversation, discover)
+
 
 	// Offer
-	offer, err := c.SendReceive(pfd, rfd, discover, dhcpv4.MessageTypeOffer)
+	offer, err := c.SendDHCPDiscover(pfd, rfd, ifname, 0, dhcpv4.MessageTypeOffer)
+	//offer, err := c.SendReceive(pfd, rfd, discover, dhcpv4.MessageTypeOffer)
 	if err != nil {
-		log.Printf("discover: %v", discover)
 		log.Printf("c.SendReceive(sfd, rfd, discover, dhcpv4.MessageTypeOffer) failed: %v", err)
 		return conversation, err
 	}
@@ -305,6 +307,279 @@ func (c *Client) Exchange(ifname string, modifiers ...dhcpv4.Modifier) ([]*dhcpv
 	conversation = append(conversation, ack)
 
 	return conversation, nil
+}
+
+
+// SendDHCPDiscover sends a single DHCPDISCOVER frame on ifname.
+func (c *Client) SendDHCPDiscover(pfd int, rfd int, ifname string, xid uint32, messageType dhcpv4.MessageType) (*dhcpv4.DHCPv4, error) {
+	var (
+		response    *dhcpv4.DHCPv4
+		transID	    dhcpv4.TransactionID
+	)
+
+	iface, err := net.InterfaceByName(ifname)
+	if err != nil {
+		return nil, err
+	}
+
+	// Build full Ethernet+IP+UDP+DHCP frame (src IP = 0.0.0.0)
+	frame, tid, err := c.buildDHCPDiscoverFrame(iface.HardwareAddr, xid)
+	if err != nil {
+		return nil, err
+	}
+	binary.LittleEndian.PutUint32(transID[:], tid)
+
+	// Destination: broadcast MAC on the same interface
+	dstMAC := []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
+
+	dst := &unix.SockaddrLinklayer{
+		Protocol: htons(unix.ETH_P_IP),
+		Ifindex:  iface.Index,
+		Halen:    uint8(len(dstMAC)),
+	}
+	copy(dst.Addr[:], dstMAC)
+
+	// Create a goroutine to perform the blocking send, and time it out after
+	// a certain amount of time.
+	recvErrors := make(chan error, 1)
+	go func(errs chan<- error) {
+		// set read timeout
+		timeout := unix.NsecToTimeval(c.ReadTimeout.Nanoseconds())
+		if innerErr := unix.SetsockoptTimeval(rfd, unix.SOL_SOCKET, unix.SO_RCVTIMEO, &timeout); innerErr != nil {
+			errs <- innerErr
+			return
+		}
+		for {
+			buf := make([]byte, MaxUDPReceivedPacketSize)
+			n, _, innerErr := unix.Recvfrom(rfd, buf, 0)
+			if innerErr != nil {
+				errs <- innerErr
+				return
+			}
+
+			var iph ipv4.Header
+			if err := iph.Parse(buf[:n]); err != nil {
+				// skip non-IP data
+				continue
+			}
+			if iph.Protocol != 17 {
+				// skip non-UDP packets
+				continue
+			}
+			udph := buf[iph.Len:n]
+			// check source and destination ports
+			srcPort := int(binary.BigEndian.Uint16(udph[0:2]))
+			expectedSrcPort := dhcpv4.ServerPort
+			if c.RemoteAddr != nil {
+				expectedSrcPort = c.RemoteAddr.(*net.UDPAddr).Port
+			}
+			if srcPort != expectedSrcPort {
+				continue
+			}
+			dstPort := int(binary.BigEndian.Uint16(udph[2:4]))
+			expectedDstPort := dhcpv4.ClientPort
+			if c.LocalAddr != nil {
+				expectedDstPort = c.LocalAddr.(*net.UDPAddr).Port
+			}
+			if dstPort != expectedDstPort {
+				continue
+			}
+			// UDP checksum is not checked
+			pLen := int(binary.BigEndian.Uint16(udph[4:6]))
+			payload := buf[iph.Len+8 : iph.Len+pLen]
+
+			response, innerErr = dhcpv4.FromBytes(payload)
+			if innerErr != nil {
+				errs <- innerErr
+				return
+			}
+			// check that this is a response to our message
+			if response.TransactionID != transID {
+				continue
+			}
+			// wait for a response message
+			if response.OpCode != dhcpv4.OpcodeBootReply {
+				continue
+			}
+			// if we are not requested to wait for a specific message type,
+			// return what we have
+			if messageType == dhcpv4.MessageTypeNone {
+				break
+			}
+			// break if it's a reply of the desired type, continue otherwise
+			if response.MessageType() == messageType {
+				break
+			}
+		}
+		recvErrors <- nil
+	}(recvErrors)
+
+	// send the request while the goroutine waits for replies
+	if err = unix.Sendto(pfd, frame, 0, dst); err != nil {
+		return nil, err
+	}
+
+	select {
+	case err = <-recvErrors:
+		if err == unix.EAGAIN {
+			return nil, errors.New("timed out while listening for replies")
+		}
+		if err != nil {
+			return nil, err
+		}
+	case <-time.After(c.ReadTimeout):
+		return nil, errors.New("timed out while listening for replies")
+	}
+
+	return response, nil
+
+}
+
+// checksum computes the standard Internet checksum (RFC 1071).
+func (c *Client) checksum(data []byte) uint16 {
+	var sum uint32
+
+	for len(data) > 1 {
+		sum += uint32(binary.BigEndian.Uint16(data))
+		data = data[2:]
+	}
+	if len(data) == 1 {
+		sum += uint32(data[0]) << 8
+	}
+
+	for (sum >> 16) > 0 {
+		sum = (sum & 0xFFFF) + (sum >> 16)
+	}
+
+	return ^uint16(sum)
+}
+
+// Build a full Ethernet+IPv4+UDP+DHCPDISCOVER frame.
+//   - srcMAC: interface MAC address (6 bytes)
+//   - xid:    transaction ID (if 0, a random one is generated)
+func (c *Client) buildDHCPDiscoverFrame(srcMAC net.HardwareAddr, xid uint32) ([]byte, uint32, error) {
+	if len(srcMAC) != 6 {
+		return nil, 0, errors.New("srcMAC must be 6 bytes (Ethernet MAC)")
+	}
+
+	if xid == 0 {
+		rand.Seed(time.Now().UnixNano())
+		xid = rand.Uint32()
+	}
+
+	const (
+		dhcpHeaderLen  = 236
+		dhcpCookieLen  = 4
+		udpHeaderLen   = 8
+		udpSrcPort     = 68
+		udpDstPort     = 67
+		ipv4HeaderLen  = 20
+		ethHeaderLen   = 14
+	)
+
+	// ---------------- DHCP payload ----------------
+	dhcp := make([]byte, dhcpHeaderLen+dhcpCookieLen)
+
+	dhcp[0] = 1 // op: BOOTREQUEST
+	dhcp[1] = 1 // htype: Ethernet
+	dhcp[2] = 6 // hlen: MAC
+	dhcp[3] = 0 // hops
+
+	binary.BigEndian.PutUint32(dhcp[4:8], xid)
+	binary.BigEndian.PutUint16(dhcp[10:12], 0x8000) // flags: broadcast
+
+	copy(dhcp[28:34], srcMAC) // chaddr
+
+	// magic cookie
+	dhcp[236] = 99
+	dhcp[237] = 130
+	dhcp[238] = 83
+	dhcp[239] = 99
+
+	opts := make([]byte, 0, 64)
+
+	// Option 53: DHCP Message Type = Discover
+	opts = append(opts, 53, 1, 1)
+
+	// Option 61: Client Identifier (type 1 + MAC)
+	opts = append(opts, 61, 1+6, 1)
+	opts = append(opts, srcMAC...)
+
+	// Option 55: Parameter Request List
+	paramReq := []byte{
+		1,  // Subnet Mask
+		3,  // Router
+		6,  // DNS
+		15, // Domain Name
+		51, // Lease Time
+		54, // DHCP Server ID
+		58, // T1
+		59, // T2
+	}
+	opts = append(opts, 55, byte(len(paramReq)))
+	opts = append(opts, paramReq...)
+
+	// End
+	opts = append(opts, 255)
+
+	dhcpPayload := append(dhcp, opts...)
+
+	// ---------------- UDP header ----------------
+	udpLen := udpHeaderLen + len(dhcpPayload)
+	udp := make([]byte, udpHeaderLen)
+
+	binary.BigEndian.PutUint16(udp[0:2], uint16(udpSrcPort))
+	binary.BigEndian.PutUint16(udp[2:4], uint16(udpDstPort))
+	binary.BigEndian.PutUint16(udp[4:6], uint16(udpLen))
+
+	// ---------------- IPv4 header ----------------
+	ip := make([]byte, ipv4HeaderLen)
+
+	ip[0] = (4 << 4) | (ipv4HeaderLen / 4)
+	ip[1] = 0
+	totalLen := ipv4HeaderLen + udpLen
+	binary.BigEndian.PutUint16(ip[2:4], uint16(totalLen))
+
+	binary.BigEndian.PutUint16(ip[4:6], 0) // ID
+	binary.BigEndian.PutUint16(ip[6:8], 0) // flags/frag
+
+	ip[8] = 64  // TTL
+	ip[9] = 17  // UDP
+
+	// src 0.0.0.0
+	ip[12], ip[13], ip[14], ip[15] = 0, 0, 0, 0
+	// dst 255.255.255.255
+	ip[16], ip[17], ip[18], ip[19] = 255, 255, 255, 255
+
+	ip[10], ip[11] = 0, 0
+	ipChk := c.checksum(ip)
+	binary.BigEndian.PutUint16(ip[10:12], ipChk)
+
+	// ---------------- UDP checksum ----------------
+	psh := make([]byte, 0, 12+udpLen)
+	psh = append(psh, ip[12:16]...) // src
+	psh = append(psh, ip[16:20]...) // dst
+	psh = append(psh, 0, ip[9])     // zero, proto
+	psh = append(psh, byte(udpLen>>8), byte(udpLen&0xff))
+	psh = append(psh, udp...)
+	psh = append(psh, dhcpPayload...)
+
+	udpChk := c.checksum(psh)
+	binary.BigEndian.PutUint16(udp[6:8], udpChk)
+
+	// ---------------- Ethernet header ----------------
+	frame := make([]byte, 0, ethHeaderLen+len(ip)+len(udp)+len(dhcpPayload))
+
+	dstMAC := []byte{0xff, 0xff, 0xff, 0xff, 0xff, 0xff}
+	frame = append(frame, dstMAC...)
+	frame = append(frame, srcMAC...)
+	frame = append(frame, 0x08, 0x00) // EtherType = IPv4
+
+	frame = append(frame, ip...)
+	frame = append(frame, udp...)
+	frame = append(frame, dhcpPayload...)
+
+	return frame, xid, nil
 }
 
 // SendReceive sends a packet (with some write timeout) and waits for a
