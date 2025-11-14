@@ -277,6 +277,7 @@ func (c *Client) Exchange(ifname string, modifiers ...dhcpv4.Modifier) ([]*dhcpv
 	// Offer
 	offer, err := c.SendReceive(sfd, rfd, discover, dhcpv4.MessageTypeOffer)
 	if err != nil {
+		log.Printf("discover: %v", discover)
 		log.Printf("c.SendReceive(sfd, rfd, discover, dhcpv4.MessageTypeOffer) failed: %v", err)
 		return conversation, err
 	}
