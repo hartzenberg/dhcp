@@ -193,7 +193,7 @@ func (c *Client) Exchange(ifname string, modifiers ...dhcpv4.Modifier) ([]*dhcpv
 	}
 	//laddr := &net.UDPAddr{
         //        IP:   net.IPv4zero,
-        //        Port: 68,
+        //        Port: dhcpv4.ClientPort,
         //}
 
 	// Get our file descriptor for the raw socket we need.
@@ -265,18 +265,19 @@ func (c *Client) SendReceive(sendFd, recvFd int, packet *dhcpv4.DHCPv4, messageT
 	if err != nil {
 		return nil, err
 	}
-	//laddr, err := c.getLocalUDPAddr()
-	//if err != nil {
-	//	return nil, err
-	//}
-	laddr := &net.UDPAddr{
-    		IP:   net.IPv4zero,
-    		Port: 68,
+	laddr, err := c.getLocalUDPAddr()
+	if err != nil {
+		return nil, err
 	}
+	//laddr := &net.UDPAddr{
+    	//	IP:   net.IPv4zero,
+    	//	Port: dhcpv4.ClientPort,
+	//}
 	packetBytes, err := MakeRawUDPPacket(packet.ToBytes(), *raddr, *laddr)
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("DEBUG: --- packetBytes: %v\n", packetBytes)
 
 	// Create a goroutine to perform the blocking send, and time it out after
 	// a certain amount of time.
