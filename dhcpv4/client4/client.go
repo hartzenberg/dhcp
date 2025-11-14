@@ -243,12 +243,12 @@ func (c *Client) Exchange(ifname string, modifiers ...dhcpv4.Modifier) ([]*dhcpv
 		sfd, err = makeRawSocket(ifname)
 	}
 	*/
-	rawfd, err = makePacketSocket(ifname)
+	pfd, err := makePacketSocket(ifname)
 	if err != nil {
 		log.Printf("makePacketSocket(ifname) failed: %v", err)
 		return conversation, err
 	}
-	rawfd, err = makePacketSocket(ifname)
+	sfd, err = makeRawSocket(ifname)
         if err != nil {
                 log.Printf("makePacketSocket(ifname) failed: %v", err)
                 return conversation, err
@@ -280,7 +280,7 @@ func (c *Client) Exchange(ifname string, modifiers ...dhcpv4.Modifier) ([]*dhcpv
 	conversation = append(conversation, discover)
 
 	// Offer
-	offer, err := c.SendReceive(rawfd, rfd, discover, dhcpv4.MessageTypeOffer)
+	offer, err := c.SendReceive(pfd, rfd, discover, dhcpv4.MessageTypeOffer)
 	if err != nil {
 		log.Printf("discover: %v", discover)
 		log.Printf("c.SendReceive(sfd, rfd, discover, dhcpv4.MessageTypeOffer) failed: %v", err)
