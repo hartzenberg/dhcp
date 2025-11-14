@@ -186,14 +186,15 @@ func (c *Client) Exchange(ifname string, modifiers ...dhcpv4.Modifier) ([]*dhcpv
 	if err != nil {
 		return nil, err
 	}
-	//laddr, err := c.getLocalUDPAddr()
-	//if err != nil {
-	//	return nil, err
-	//}
-	laddr := &net.UDPAddr{
-                IP:   net.IPv4zero,
-                Port: 68,
-        }
+
+	laddr := c.getLocalUDPAddr()
+	if err != nil {
+		return nil, err
+	}
+	//laddr := &net.UDPAddr{
+        //        IP:   net.IPv4zero,
+        //        Port: 68,
+        //}
 
 	// Get our file descriptor for the raw socket we need.
 	var sfd int
