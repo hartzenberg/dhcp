@@ -383,7 +383,7 @@ func (c *Client) SendDHCPDiscover(pfd int, rfd int, ifname string, xid uint32, m
 				expectedSrcPort = c.RemoteAddr.(*net.UDPAddr).Port
 			}
 			if srcPort != expectedSrcPort {
-				fmt.Printf("func-error: wrong srcport...\n"
+				fmt.Printf("func-error: wrong srcport...\n")
 				continue
 			}
 			dstPort := int(binary.BigEndian.Uint16(udph[2:4]))
@@ -392,7 +392,7 @@ func (c *Client) SendDHCPDiscover(pfd int, rfd int, ifname string, xid uint32, m
 				expectedDstPort = c.LocalAddr.(*net.UDPAddr).Port
 			}
 			if dstPort != expectedDstPort {
-				fmt.Printf("func-error: wrong dstport...\n"
+				fmt.Printf("func-error: wrong dstport...\n")
 				continue
 			}
 			// UDP checksum is not checked
