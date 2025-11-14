@@ -9,6 +9,7 @@ import (
 	"net"
 	"time"
 	"math/rand"
+	"syscall"
 
 	"github.com/hartzenberg/dhcp/dhcpv4"
 	"golang.org/x/net/ipv4"
@@ -353,6 +354,10 @@ func (c *Client) SendDHCPDiscover(pfd int, rfd int, ifname string, xid uint32, m
 			buf := make([]byte, MaxUDPReceivedPacketSize)
 			n, _, innerErr := unix.Recvfrom(rfd, buf, 0)
 			if innerErr != nil {
+			        if innerErr == syscall.EINTR || err == unix.EINTR {
+			            // System call was interrupted by a signal, retry the call
+			            continue
+			        }
 				errs <- innerErr
 				fmt.Printf("func-error: innerErr recieving buf: %v\n", innerErr)
 				return
