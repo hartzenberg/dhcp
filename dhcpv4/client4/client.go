@@ -243,11 +243,16 @@ func (c *Client) Exchange(ifname string, modifiers ...dhcpv4.Modifier) ([]*dhcpv
 		sfd, err = makeRawSocket(ifname)
 	}
 	*/
-	sfd, err = makePacketSocket(ifname)
+	rawfd, err = makePacketSocket(ifname)
 	if err != nil {
 		log.Printf("makePacketSocket(ifname) failed: %v", err)
 		return conversation, err
 	}
+	rawfd, err = makePacketSocket(ifname)
+        if err != nil {
+                log.Printf("makePacketSocket(ifname) failed: %v", err)
+                return conversation, err
+        }
 	rfd, err := makeListeningSocketWithCustomPort(ifname, laddr.Port)
 	if err != nil {
 		log.Printf("makeListeningSocketWithCustomPort(ifname, laddr.Port) failed: %v", err)
@@ -275,7 +280,7 @@ func (c *Client) Exchange(ifname string, modifiers ...dhcpv4.Modifier) ([]*dhcpv
 	conversation = append(conversation, discover)
 
 	// Offer
-	offer, err := c.SendReceive(sfd, rfd, discover, dhcpv4.MessageTypeOffer)
+	offer, err := c.SendReceive(rawfd, rfd, discover, dhcpv4.MessageTypeOffer)
 	if err != nil {
 		log.Printf("discover: %v", discover)
 		log.Printf("c.SendReceive(sfd, rfd, discover, dhcpv4.MessageTypeOffer) failed: %v", err)
