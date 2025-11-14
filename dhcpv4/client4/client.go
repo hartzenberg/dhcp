@@ -237,23 +237,16 @@ func (c *Client) Exchange(ifname string, modifiers ...dhcpv4.Modifier) ([]*dhcpv
 	// cover the majority of use cases, but we're essentially ignoring the fact
 	// that the IP could be the broadcast address of a specific subnet.
 
-	/*
 	if raddr.IP.Equal(net.IPv4bcast) {
 		sfd, err = MakeBroadcastSocket(ifname)
 	} else {
 		sfd, err = makeRawSocket(ifname)
 	}
-	*/
 	pfd, err := makePacketSocket(ifname)
 	if err != nil {
 		log.Printf("makePacketSocket(ifname) failed: %v", err)
 		return conversation, err
 	}
-	sfd, err = makeRawSocket(ifname)
-        if err != nil {
-                log.Printf("makePacketSocket(ifname) failed: %v", err)
-                return conversation, err
-        }
 	rfd, err := makeListeningSocketWithCustomPort(ifname, laddr.Port)
 	if err != nil {
 		log.Printf("makeListeningSocketWithCustomPort(ifname, laddr.Port) failed: %v", err)
