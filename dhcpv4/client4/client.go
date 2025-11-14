@@ -9,7 +9,6 @@ import (
 	"net"
 	"time"
 	"math/rand"
-	"syscall"
 
 	"github.com/hartzenberg/dhcp/dhcpv4"
 	"golang.org/x/net/ipv4"
