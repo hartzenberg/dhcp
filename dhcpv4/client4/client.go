@@ -364,6 +364,8 @@ func (c *Client) SendDHCPDiscover(pfd int, rfd int, ifname string, xid uint32, m
 				return
 			}
 
+			fmt.Printf("func: received %d bytes...\n",n)
+
 			var iph ipv4.Header
 			if err := iph.Parse(buf[:n]); err != nil {
 				// skip non-IP data
@@ -381,6 +383,7 @@ func (c *Client) SendDHCPDiscover(pfd int, rfd int, ifname string, xid uint32, m
 				expectedSrcPort = c.RemoteAddr.(*net.UDPAddr).Port
 			}
 			if srcPort != expectedSrcPort {
+				fmt.Printf("func-error: wrong srcport...\n"
 				continue
 			}
 			dstPort := int(binary.BigEndian.Uint16(udph[2:4]))
@@ -389,6 +392,7 @@ func (c *Client) SendDHCPDiscover(pfd int, rfd int, ifname string, xid uint32, m
 				expectedDstPort = c.LocalAddr.(*net.UDPAddr).Port
 			}
 			if dstPort != expectedDstPort {
+				fmt.Printf("func-error: wrong dstport...\n"
 				continue
 			}
 			// UDP checksum is not checked
@@ -403,10 +407,12 @@ func (c *Client) SendDHCPDiscover(pfd int, rfd int, ifname string, xid uint32, m
 			}
 			// check that this is a response to our message
 			if response.TransactionID != transID {
+				fmt.Printf("func-error: not our transaction...\n")
 				continue
 			}
 			// wait for a response message
 			if response.OpCode != dhcpv4.OpcodeBootReply {
+				fmt.Printf("func-error: not our Opcode...\n")
 				continue
 			}
 			// if we are not requested to wait for a specific message type,
