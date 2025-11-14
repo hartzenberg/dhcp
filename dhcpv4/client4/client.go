@@ -350,6 +350,7 @@ func (c *Client) SendDHCPDiscover(pfd int, rfd int, ifname string, xid uint32, m
 			errs <- innerErr
 			return
 		}
+		fmt.Printf("func: Listen for pkts on %d...\n",rfd)
 		for {
 			buf := make([]byte, MaxUDPReceivedPacketSize)
 			n, _, innerErr := unix.Recvfrom(rfd, buf, 0)
