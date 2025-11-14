@@ -277,6 +277,7 @@ func (c *Client) Exchange(ifname string, modifiers ...dhcpv4.Modifier) ([]*dhcpv
 	// Offer
 	offer, err := c.SendReceive(sfd, rfd, discover, dhcpv4.MessageTypeOffer)
 	if err != nil {
+		log.Printf("c.SendReceive(sfd, rfd, discover, dhcpv4.MessageTypeOffer) failed: %v", err)
 		return conversation, err
 	}
 	conversation = append(conversation, offer)
@@ -284,6 +285,7 @@ func (c *Client) Exchange(ifname string, modifiers ...dhcpv4.Modifier) ([]*dhcpv
 	// Request
 	request, err := dhcpv4.NewRequestFromOffer(offer, modifiers...)
 	if err != nil {
+		log.Printf("dhcpv4.NewRequestFromOffer(offer, modifiers...) failed: %v", err)
 		return conversation, err
 	}
 	conversation = append(conversation, request)
@@ -291,6 +293,7 @@ func (c *Client) Exchange(ifname string, modifiers ...dhcpv4.Modifier) ([]*dhcpv
 	// Ack
 	ack, err := c.SendReceive(sfd, rfd, request, dhcpv4.MessageTypeAck)
 	if err != nil {
+		log.Printf("c.SendReceive(sfd, rfd, request, dhcpv4.MessageTypeAck) failed: %v", err)
 		return conversation, err
 	}
 	conversation = append(conversation, ack)
