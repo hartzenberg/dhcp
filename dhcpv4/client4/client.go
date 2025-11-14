@@ -93,6 +93,12 @@ func makeRawSocket(ifname string) (int, error) {
 	if err != nil {
 		return fd, err
 	}
+
+	// This is the key: bind directly to the device to bypass routing
+        err = unix.SetsockoptString(fd, unix.SOL_SOCKET, unix.SO_BINDTODEVICE, ifname)
+        if err != nil {
+                return fd, err
+        }
 	return fd, nil
 }
 
@@ -277,7 +283,6 @@ func (c *Client) SendReceive(sendFd, recvFd int, packet *dhcpv4.DHCPv4, messageT
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("DEBUG: --- packetBytes: %v\n", packetBytes)
 
 	// Create a goroutine to perform the blocking send, and time it out after
 	// a certain amount of time.
