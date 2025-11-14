@@ -94,12 +94,39 @@ func makeRawSocket(ifname string) (int, error) {
 		return fd, err
 	}
 
-	// This is the key: bind directly to the device to bypass routing
         err = unix.SetsockoptString(fd, unix.SOL_SOCKET, unix.SO_BINDTODEVICE, ifname)
         if err != nil {
                 return fd, err
         }
 	return fd, nil
+}
+
+func makePacketSocket(ifname string) (int, error) {
+    // Get interface index/MAC for binding
+    iface, err := net.InterfaceByName(ifname)
+    if err != nil {
+        return -1, err
+    }
+
+    // AF_PACKET raw socket, protocol = ETH_P_IP (big-endian)
+    fd, err := unix.Socket(unix.AF_PACKET, unix.SOCK_RAW, int(htons(unix.ETH_P_IP)))
+    if err != nil {
+        return -1, err
+    }
+
+    sll := &unix.SockaddrLinklayer{
+        Protocol: htons(unix.ETH_P_IP),
+        Ifindex:  iface.Index,
+        Halen:    uint8(len(iface.HardwareAddr)),
+    }
+    copy(sll.Addr[:], iface.HardwareAddr)
+
+    if err := unix.Bind(fd, sll); err != nil {
+        unix.Close(fd)
+        return -1, err
+    }
+
+    return fd, nil
 }
 
 // MakeBroadcastSocket creates a socket that can be passed to unix.Sendto
@@ -188,11 +215,12 @@ func (c *Client) getRemoteUDPAddr() (*net.UDPAddr, error) {
 // containing all the sent and received DHCPv4 messages.
 func (c *Client) Exchange(ifname string, modifiers ...dhcpv4.Modifier) ([]*dhcpv4.DHCPv4, error) {
 	conversation := make([]*dhcpv4.DHCPv4, 0)
+	/*
 	raddr, err := c.getRemoteUDPAddr()
 	if err != nil {
 		return nil, err
 	}
-
+	*/
 	laddr, err := c.getLocalUDPAddr()
 	if err != nil {
 		return nil, err
@@ -207,11 +235,16 @@ func (c *Client) Exchange(ifname string, modifiers ...dhcpv4.Modifier) ([]*dhcpv
 	// If the address is not net.IPV4bcast, use a unicast socket. This should
 	// cover the majority of use cases, but we're essentially ignoring the fact
 	// that the IP could be the broadcast address of a specific subnet.
+
+	/*
 	if raddr.IP.Equal(net.IPv4bcast) {
 		sfd, err = MakeBroadcastSocket(ifname)
 	} else {
 		sfd, err = makeRawSocket(ifname)
 	}
+	*/
+	sfd, err = makePacketSocket(ifname)
+
 	if err != nil {
 		return conversation, err
 	}
