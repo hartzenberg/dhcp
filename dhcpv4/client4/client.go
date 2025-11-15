@@ -349,6 +349,7 @@ func (c *Client) SendDHCPPacket(pfd int, rfd int, ifname string, xid uint32, sen
 	// Create a goroutine to perform the blocking send, and time it out after
 	// a certain amount of time.
 	recvErrors := make(chan error, 1)
+	buf := make([]byte, MaxUDPReceivedPacketSize)
 	go func(errs chan<- error) {
 		// set read timeout
 		timeout := unix.NsecToTimeval(c.ReadTimeout.Nanoseconds())
@@ -357,7 +358,6 @@ func (c *Client) SendDHCPPacket(pfd int, rfd int, ifname string, xid uint32, sen
 			return
 		}
 		for {
-			buf := make([]byte, MaxUDPReceivedPacketSize)
 			n, _, innerErr := unix.Recvfrom(rfd, buf, 0)
 			if innerErr != nil {
 				errs <- innerErr
