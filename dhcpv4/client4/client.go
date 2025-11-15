@@ -269,11 +269,11 @@ func (c *Client) Exchange(ifname string, modifiers ...dhcpv4.Modifier) ([]*dhcpv
 	}
 	conversation = append(conversation, offer)
 
-	payload, _, err = c.SendDHCPPacket(pfd, rfd, ifname, 0, dhcpv4.MessageTypeRequest, dhcpv4.MessageTypeAck, payload)
+	_, ack, err := c.SendDHCPPacket(pfd, rfd, ifname, 0, dhcpv4.MessageTypeRequest, dhcpv4.MessageTypeAck, payload)
 	if err != nil {
                 return conversation, err
         }
-	conversation = append(conversation, offer)
+	conversation = append(conversation, ack)
 
 	/*
 	// Discover
@@ -601,7 +601,7 @@ func (c *Client) buildDHCPDiscoverFrame(srcMAC net.HardwareAddr, xid uint32) ([]
 //   - Sends from IP 0.0.0.0:68 to 255.255.255.255:67 (broadcast REQUEST)
 func (c *Client) BuildDHCPRequestFromOffer(offer []byte) ([]byte, uint32, error) {
 	const (
-		ethHeaderLen  = 14
+		ethHeaderLen  = 0 // 14
 		minIPv4Len    = 20
 		udpHeaderLen  = 8
 		dhcpHeaderLen = 236
