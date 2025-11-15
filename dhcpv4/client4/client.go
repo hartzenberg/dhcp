@@ -438,7 +438,7 @@ func (c *Client) SendDHCPPacket(pfd int, rfd int, ifname string, xid uint32, sen
 		return nil, nil, errors.New("timed out while listening for replies")
 	}
 
-	return payload, response, nil
+	return buf, response, nil
 
 }
 
